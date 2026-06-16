@@ -1,0 +1,20 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: hr-module-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+    networks:
+      - hr-module-network
+    environment:
+      - MONGO_INITDB_DATABASE=hr_module
+
+volumes:
+  mongodb_data:
+
+networks:
+  hr-module-network:
+    driver: bridge

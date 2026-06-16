@@ -1,0 +1,6 @@
+hosts:
+  _default: chatbot-task-manager.dev.bmc-soft.ru
+  test: chatbot-task-manager.test.bmc-soft.ru
+
+app:
+  enabled: true

@@ -1,0 +1,31 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: targeting-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: targeting_service
+      POSTGRES_USER: targeting_user
+      POSTGRES_PASSWORD: change_me
+    ports:
+      - "55432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: targeting-service
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:
+    driver: local
+

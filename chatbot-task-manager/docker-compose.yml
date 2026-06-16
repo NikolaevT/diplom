@@ -1,0 +1,36 @@
+services:
+  
+  mongodb:
+    image: mongo:7.0
+    container_name: chatbot-task_manager-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+    networks:
+      - task-manager-network
+    environment:
+      - MONGO_INITDB_DATABASE=task_manager
+
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: chatbot-task_manager-chromadb
+    ports:
+      - "8000:8000"
+    volumes:
+      - chromadb_data:/chroma/chroma
+    restart: unless-stopped
+    networks:
+      - task-manager-network
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+
+volumes:
+  mongodb_data:
+  chromadb_data:
+
+networks:
+  task-manager-network:
+    driver: bridge

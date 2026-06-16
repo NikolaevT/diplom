@@ -1,0 +1,32 @@
+hosts:
+  _default: targeting-service-ai.dev.bmc-soft.ru
+  test_ai: targeting-service-ai.test.bmc-soft.ru
+
+postgres:
+  secret: postgres-secrets
+
+commonEnv:
+  - name: LOG_LEVEL
+    value: "INFO"
+  - name: PORT
+    value: "8080"
+  - name: DB_HOST
+    value: "5104.vm.bmc-soft.ru"
+  - name: DB_PORT
+    value: "5432"
+
+standEnv:
+  test_ai:
+    - name: DB_NAME
+      value: "targeting_service_test"
+    - name: BOT_BASE_URL
+      value: "https://chatbot-newspaper.test.bmc-soft.ru"
+    - name: IDENTITY_URL
+      value: "https://it.test.bmc-soft.ru/svc-lion/v1/identity"
+  dev_ai:
+    - name: DB_NAME
+      value: "targeting_service"
+    - name: BOT_BASE_URL
+      value: "https://chatbot-newspaper.dev.bmc-soft.ru"
+    - name: IDENTITY_URL
+      value: "https://it.dev.bmc-soft.ru/svc-lion/v1/identity"

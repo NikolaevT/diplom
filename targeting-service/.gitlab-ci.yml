@@ -1,0 +1,105 @@
+stages:
+  - test
+  - build
+  - deploy
+  - MR
+
+variables:
+  CACHE_ENABLED: true
+  IMAGE_NAME: bmk-targeting-service
+  IMG_TAG: "${CI_COMMIT_REF_SLUG}"
+  DOCKERFILE_PATH: Dockerfile
+  APP_NAME: bmk-targeting-service
+  HELM_PATH: .helm
+  CI_TIMEOUT: 240
+
+
+.tests-job: &tests-job
+  image: python:3.11
+  before_script:
+    - pip install uv
+    - uv sync --frozen
+  script:
+    - |
+      uv run pytest
+
+tests:
+  <<: *tests-job
+  stage: test
+
+tests-mr:
+  <<: *tests-job
+  stage: MR
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+
+build:
+  stage: build
+  image: ${REGISTRY_ADDRESS}/infra/buildkit:rootless
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_REF_NAME == "main"
+  variables:
+    BUILDKITD_FLAGS: --oci-worker-no-process-sandbox
+    CACHE_IMAGE: ${REGISTRY_CACHE_ADDRESS}/${IMAGE_NAME}/cache:buildkitcache
+  script:
+    - |
+      buildctl-daemonless.sh build \
+        --frontend dockerfile.v0 \
+        --local context=${CI_PROJECT_DIR} \
+        --local dockerfile=${CI_PROJECT_DIR} \
+        --opt platform=linux/amd64 \
+        --export-cache type=registry,ref=$CACHE_IMAGE,mode=min \
+        --import-cache type=registry,ref=$CACHE_IMAGE \
+        --output type=image,name=${REGISTRY_ADDRESS}/${IMAGE_NAME}:${IMG_TAG},push=true
+  timeout: 2h
+
+
+.base-deploy: &base-deploy
+  stage: deploy
+  image: ${REGISTRY_ADDRESS}/k8s-tools:main
+  tags:
+    - dev
+  script:
+    - |
+      helm upgrade \
+          --install --debug --atomic --wait --recreate-pods --timeout ${CI_TIMEOUT:-240}s \
+          --set "global.gitlab_repository=${CI_PROJECT_URL}" \
+          --set "global.commit_hash=${CI_COMMIT_SHA}" \
+          --set "global.commit_ref=${CI_COMMIT_REF_NAME}" \
+          --set "global.app_name=${APP_NAME}" --set "global.env=${STAND}_${CLIENT}" --set "global.client=${CLIENT}" --set "global.stand=${STAND}" \
+          --set "global.image_name=${REGISTRY_ADDRESS}/${IMAGE_NAME}:${IMG_TAG}" \
+          --set "global.job_id=${CI_JOB_ID}" \
+          --namespace $NAMESPACE --create-namespace \
+          ${APP_NAME} \
+          ${HELM_PATH};
+  after_script:
+    - |
+      echo -e "\033[1;31mCurrent pods\033[0m";
+      kubectl get pod -n $NAMESPACE -l app=${APP_NAME} || true;
+      
+      echo -e "\033[1;31mMigration logs\033[0m";
+      kubectl logs -n $NAMESPACE -l app=${APP_NAME},type=migration --tail=200 || true;
+      kubectl delete job -n $NAMESPACE -l app=${APP_NAME};
+
+      echo -e "\033[1;31mService logs\033[0m";
+      kubectl logs -n $NAMESPACE -l app=${APP_NAME} --tail=200 --prefix || true
+    - kubectl delete secret -n $NAMESPACE --field-selector type=helm.sh/release.v1 -l name=${APP_NAME},owner=helm
+
+deploy-dev:
+  <<: *base-deploy
+  only:
+    - main
+  variables:
+    NAMESPACE: ai-dev
+    STAND: dev
+    CLIENT: ai
+
+deploy-test:
+  <<: *base-deploy
+  rules:
+    - if: $CI_COMMIT_TAG
+  variables:
+    NAMESPACE: ai-test
+    STAND: test
+    CLIENT: ai

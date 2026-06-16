@@ -1,0 +1,78 @@
+{# Наследуемся от базового list.html и переопределяем блок content для добавления кастомных стилей #}
+{% extends "sqladmin/list.html" %}
+
+{% block content %}
+<style>
+  html, body {
+
+  }
+
+  .table-responsive {
+    overflow-x: auto !important;
+    max-width: 100vw;
+  }
+
+  .table-responsive table th:nth-child(3),
+  .table-responsive table td:nth-child(3) {
+    max-width: 250px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .table-responsive table th:nth-child(4),
+  .table-responsive table td:nth-child(4) {
+    max-width: 250px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .table-responsive table tbody tr {
+    cursor: pointer;
+  }
+  .table-responsive table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+  }
+
+  /* Ссылка на детали остаётся в DOM для клика по строке, иконку глаза скрываем */
+  .details-link-in-row {
+    visibility: hidden;
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
+  /* Иконку редактирования скрываем, ссылка остаётся в DOM */
+  .edit-link-in-row {
+    visibility: hidden;
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
+</style>
+{{ super() }}
+<script>
+(function() {
+  document.querySelectorAll('.table-responsive tbody tr').forEach(function(row) {
+    const detailsLink = row.querySelector('a.details-link-in-row');
+
+    if (!detailsLink) {
+      return;
+    }
+
+    row.addEventListener('click', function(e) {
+      if (e.target.closest('a, input, button')) {
+        return;
+      }
+
+      e.preventDefault();
+      window.location = detailsLink.href;
+    });
+  });
+})();
+</script>
+{% endblock %}

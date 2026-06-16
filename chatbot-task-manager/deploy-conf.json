@@ -1,0 +1,42 @@
+{
+  "values": [
+    {
+      "type": "vault",
+      "elements": [
+        {
+          "address": {
+            "type": "env",
+            "value": "VAULT_ADDR"
+          },
+          "token": {
+            "type": "env",
+            "value": "VAULT_TOKEN"
+          },
+          "prefix": "env",
+          "name": {
+            "type": "env",
+            "value": "VAULT_SECRETS_NAME"
+          },
+          "path": {
+            "type": "env",
+            "value": "VAULT_SECRETS_PATH"
+          }
+        }
+      ]
+    },
+    {
+      "type": "env",
+      "elements": []
+    },
+    {
+      "type": "flag",
+      "elements": [
+        {
+          "keys": ["gitlab_repository", "commit_hash", "commit_ref", "app_name", "image_name", "stand", "job_id"],
+          "prefix": "global"
+        }
+      ]
+    }
+  ]
+}
+

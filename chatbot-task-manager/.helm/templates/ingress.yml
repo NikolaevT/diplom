@@ -1,0 +1,20 @@
+{{ $root := . }}
+{{ $host := pluck $root.Values.global.stand $root.Values.hosts | first | default $root.Values.hosts._default }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $root.Values.global.app_name }}
+  namespace: {{ $root.Release.Namespace }}
+spec:
+  rules:
+    - host: {{ $host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $root.Values.global.app_name }}
+                port:
+                  number: 8080

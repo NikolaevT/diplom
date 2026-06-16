@@ -1,0 +1,21 @@
+services:
+  
+  mongodb:
+    image: mongo:7.0
+    container_name: chatbot-newspaper-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+    networks:
+      - newspaper-network
+    environment:
+      - MONGO_INITDB_DATABASE=newspaper
+
+volumes:
+  mongodb_data:
+
+networks:
+  newspaper-network:
+    driver: bridge

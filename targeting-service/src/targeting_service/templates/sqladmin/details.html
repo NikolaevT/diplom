@@ -1,0 +1,240 @@
+{% extends "sqladmin/layout.html" %}
+{% block content %}
+<div class="col-12">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">
+        {{ model.name | default(get_object_identifier(model)) }}
+      </h3>
+    </div>
+    <div class="card-body border-bottom py-3">
+      <div class="table-responsive">
+        <table class="table card-table table-vcenter text-nowrap table-hover table-bordered">
+          <thead>
+            <tr>
+              <th class="w-1">Поле</th>
+              <th class="w-1">Значение</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for name in model_view._details_prop_names %}
+            {% set label = model_view._column_labels.get(name, name) %}
+            <tr>
+              <td>{{ label }}</td>
+              {% set value, formatted_value = model_view.get_detail_value(model, name) %}
+              {% if name in model_view._relation_names %}
+              {% if is_list( value ) %}
+              <td>
+                {% for elem, formatted_elem in zip(value, formatted_value) %}
+                  {% if model_view.show_compact_lists %}
+                    <a href="/admin/{{ model_view.identity }}/details/{{ get_object_identifier(elem) }}">({{ formatted_elem }})</a>
+                  {% else %}
+                    <a href="/admin/{{ model_view.identity }}/details/{{ get_object_identifier(elem) }}">{{ formatted_elem }}</a><br/>
+                  {% endif %}
+                {% endfor %}
+              </td>
+              {% else %}
+              <td><a href="/admin/{{ model_view.identity }}/details/{{ get_object_identifier(model) }}">{{ formatted_value }}</a>
+              </td>
+              {% endif %}
+              {% else %}
+              <td>{{ formatted_value }}</td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer container">
+        <div class="row row-gap-2">
+          <div class="col-auto">
+            <a href="/admin/{{ model_view.identity }}/list" class="btn">
+              Назад
+            </a>
+          </div>
+          {% if model_view.can_delete %}
+          <div class="col-auto">
+            <a href="#" data-name="{{ model_view.name }}" data-pk="{{ get_object_identifier(model) }}"
+              data-url="/admin/{{ model_view.identity }}/delete?pks={{ get_object_identifier(model) }}" data-bs-toggle="modal"
+              data-bs-target="#modal-delete" class="btn btn-danger">
+              Удалить
+            </a>
+          </div>
+          {% endif %}
+          {% if model_view.can_edit %}
+          <div class="col-auto">
+            <a href="/admin/{{ model_view.identity }}/edit/{{ get_object_identifier(model) }}" class="btn btn-primary">
+              Редактировать
+            </a>
+          </div>
+          {% endif %}
+          {% for custom_action,label in model_view._custom_actions_in_detail.items() %}
+          <div class="col-auto">
+            {% if custom_action in model_view._custom_actions_confirmation %}
+            <a href="#" class="btn btn-secondary" data-bs-toggle="modal"
+              data-bs-target="#modal-confirmation-{{ custom_action }}">
+              {{ label }}
+            </a>
+            {% else %}
+            <a href="/admin/{{ model_view.identity }}/action/{{ custom_action }}?pks={{ get_object_identifier(model) }}"
+              class="btn btn-secondary">
+              {{ label }}
+            </a>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% for related in model_view.details_related_list %}
+{% set items = model | attr(related.field) %}
+<div class="col-12 mt-3">
+  <div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+      <h3 class="card-title mb-0">{{ related.label }}</h3>
+      {% if related.set_url_base is defined %}
+      <button type="button" class="btn btn-sm btn-primary"
+              data-bs-toggle="modal"
+              data-bs-target="#modal-add-{{ related.field }}">
+        Настроить {{ related.label | lower }}
+      </button>
+      {% endif %}
+    </div>
+    <div class="card-body">
+      {% if items %}
+      <ul class="list-unstyled mb-0">
+        {% for item in items %}
+        <li>
+          <a href="/admin/{{ related.identity }}/details/{{ get_object_identifier(item) }}">
+            {{ item.name | default(get_object_identifier(item)) }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-muted mb-0">Нет записей</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if related.set_url_base is defined %}
+<div class="modal modal-blur fade" id="modal-add-{{ related.field }}" tabindex="-1" role="dialog" aria-hidden="true"
+     data-set-url="{{ related.set_url_base }}/{{ get_object_identifier(model) }}/{{ related.set_action }}"
+     data-body-key="{{ related.body_key }}"
+     data-available-url="{{ related.available_url }}"
+     data-current-ids="{% for item in items %}{{ get_object_identifier(item) }}{% if not loop.last %},{% endif %}{% endfor %}">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ related.label }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <div id="checklist-{{ related.field }}"
+             style="max-height: 320px; overflow-y: auto;">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn me-auto" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-primary" id="btn-save-{{ related.field }}">
+          Сохранить
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endfor %}
+
+{% if model_view.can_delete %}
+{% include 'sqladmin/modals/delete.html' %}
+{% endif %}
+
+{% for custom_action in model_view._custom_actions_in_detail %}
+{% if custom_action in model_view._custom_actions_confirmation %}
+{% with confirmation_message = model_view._custom_actions_confirmation[custom_action], custom_action=custom_action,
+url='/admin/' + model_view.identity + '/action/' + custom_action + '?pks=' + (get_object_identifier(model) | string) %}
+{% include 'sqladmin/modals/details_action_confirmation.html' %}
+{% endwith %}
+{% endif %}
+{% endfor %}
+
+{% endblock %}
+
+{% block tail %}
+<script>
+(function () {
+  document.querySelectorAll('[id^="modal-add-"]').forEach(function (modal) {
+    var field = modal.id.replace('modal-add-', '');
+    var checklist = document.getElementById('checklist-' + field);
+    var saveBtn = document.getElementById('btn-save-' + field);
+
+    if (!checklist || !saveBtn) return;
+
+    var setUrl = modal.dataset.setUrl;
+    var bodyKey = modal.dataset.bodyKey;
+    var availableUrl = modal.dataset.availableUrl;
+
+    // Строка с уже привязанными ID через запятую, парсим в массив (фильтруем пустые)
+    var currentIds = (modal.dataset.currentIds || '').split(',').filter(Boolean);
+
+    // При каждом открытии модалки загружаем все доступные теги и рендерим чекбоксы
+    modal.addEventListener('show.bs.modal', function () {
+      checklist.innerHTML = '<p class="text-muted">Загрузка...</p>';
+
+      fetch(availableUrl)
+        .then(function (r) { return r.json(); })
+        .then(function (items) {
+          if (!items.length) {
+            checklist.innerHTML = '<p class="text-muted">Нет доступных тегов</p>';
+            return;
+          }
+
+          // Для каждого тега рисуем строку с чекбоксом
+          checklist.innerHTML = items.map(function (item) {
+            var checked = currentIds.indexOf(item.id) !== -1 ? 'checked' : '';
+            return (
+              '<div class="form-check py-1">' +
+                '<input class="form-check-input" type="checkbox"' +
+                  ' id="chk-' + field + '-' + item.id + '"' +
+                  ' value="' + item.id + '"' +
+                  ' ' + checked + '>' +
+                '<label class="form-check-label" for="chk-' + field + '-' + item.id + '">' +
+                  item.name +
+                '</label>' +
+              '</div>'
+            );
+          }).join('');
+        });
+    });
+
+    // При клике "Сохранить" — собираем отмеченные чекбоксы и отправляем на сервер
+    saveBtn.addEventListener('click', function () {
+      var checked = checklist.querySelectorAll('input[type="checkbox"]:checked');
+      var tagIds = Array.from(checked).map(function (cb) { return cb.value; });
+
+      fetch(setUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.fromEntries([[bodyKey, tagIds]])),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.ok) {
+            window.location.reload();
+          }
+        })
+        .catch(function (err) {
+          console.error(err);
+          alert('Ошибка при сохранении');
+        });
+    });
+  });
+})();
+</script>
+{% endblock %}

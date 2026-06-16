@@ -1,0 +1,44 @@
+[project]
+name = "hr-module"
+version = "0.1.0"
+description = "HR recruitment bot: middleware and BMK-IT integration"
+authors = [{ name = "BMK Team" }]
+requires-python = ">=3.12"
+dependencies = [
+    "aiogram>=3.9.0",
+    "fastapi>=0.104.0",
+    "httpx>=0.27.0",
+    "loguru>=0.7.2",
+    "mongoengine>=0.29.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "python-multipart>=0.0.6",
+    "uvicorn[standard]>=0.24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.5,<0.6",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["dev_tools", "bot/src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["dev_tools/mock_bmk_it/tests", "bot/tests"]
+pythonpath = [".", "bot"]

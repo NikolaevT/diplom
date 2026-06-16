@@ -1,0 +1,49 @@
+[project]
+name = "chatbot-task-manager"
+version = "1.0.0"
+description = "Chatbot task-manager application"
+authors = [
+    {name = "BMK Team"}
+]
+requires-python = "==3.12.*"
+dependencies = [
+    "crewai>=0.177.0,<1.0.0",
+    "uvicorn[standard]>=0.24.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "loguru>=0.7.2",
+    "mongoengine>=0.29.0",
+    "aiogram>=3.9.0",
+    "httpx>=0.27.0",
+    "chromadb>=0.4.0",
+    "sentence-transformers>=2.2.0",
+    "nest-asyncio>=1.6.0",
+    "fastapi>=0.104.0",
+    "pyjwt>=2.8.0",
+    "faster-whisper>=1.0.0",
+    "opensearch-logger>=1.3.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.uv]
+package = true
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.5,<0.6",
+    "pytest>=8.0.0",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

@@ -1,0 +1,43 @@
+[project]
+name = "chatbot-newspaper"
+version = "1.0.0"
+description = "Chatbot newspaper application"
+authors = [
+    {name = "BMK Team"}
+]
+requires-python = "==3.13.*"
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "loguru>=0.7.2",
+    "mongoengine>=0.29.0",
+    "aiogram>=3.9.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.5,<0.6",
+]
+[project.scripts]
+run = "src.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.uv]
+package = true
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+

@@ -1,0 +1,27 @@
+mongoPersistDir: /docker-entrypoint-initdb.d
+
+hosts:
+  _default: chatbot-newspaper.dev.bmc-soft.ru
+  test_ai: chatbot-newspaper.test.bmc-soft.ru
+
+chatbot:
+  enabled: true
+  secret_token: botnews-token
+  secret_mongodburl: botnews-mongo
+  #commonEnv:
+   # MONGO_DB_NAME: "newspaper"
+    #RECIPIENT_API_URL: "https://targeting-service-ai.test.bmc-soft.ru/api/v1/recipients"
+
+
+standEnv:
+  test_ai:
+    - name: MONGO_DB_NAME
+      value: "newspaper_test"
+    - name: RECIPIENT_API_URL
+      value: "http://bmk-targeting-service/api/v1/recipients"
+
+  dev_ai:
+    - name: MONGO_DB_NAME
+      value: "newspaper"
+    - name: RECIPIENT_API_URL
+      value: "http://bmk-targeting-service/api/v1/recipients"

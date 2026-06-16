@@ -1,0 +1,48 @@
+{{ $root := . }}
+{{- if .Values.app.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $root.Values.global.app_name }}
+  namespace: {{ $root.Release.Namespace }}
+  annotations:
+    gitlab_repository: {{ $root.Values.global.gitlab_repository | quote }}
+    commit_sha: {{ $root.Values.global.commit_hash | quote }}
+    commit_ref: {{ $root.Values.global.commit_ref | quote }}
+    helm.sh/resource-policy: keep
+  labels:
+    app: {{ $root.Values.global.app_name }}
+    app.kubernetes.io/name: {{ $root.Values.global.app_name }}
+    app.kubernetes.io/instance: {{ $root.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $root.Release.Service }}
+    helm.sh/chart: {{ $root.Chart.Name }}-{{ $root.Chart.Version | replace "+" "_" }}
+spec:
+  replicas: 1
+  #serviceName: {{ $root.Values.global.app_name }}
+  selector:
+    matchLabels:
+      app: {{ $root.Values.global.app_name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $root.Values.global.app_name }}
+    spec:
+      containers:
+        - name: {{ $root.Values.global.app_name }}
+          image: {{ $root.Values.global.image_name | quote }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+          - name: "deploy_job"
+            value: {{ $root.Values.global.job_id | quote }}
+          {{- range $key, $val:= .Values.env }}
+          - name: {{ $key }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ $root.Values.global.app_name }}-env
+                key: {{ $key }}
+          {{- end }}
+
+{{- end }}
